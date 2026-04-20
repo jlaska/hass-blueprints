@@ -1,0 +1,353 @@
+mode: restart
+max_exceeded: silent
+blueprint:
+  domain: automation
+  name: Presence-Activated Entity Controller
+  source_url: https://raw.githubusercontent.com/jlaska/hass-blueprints/main/presence_activated_entity_controller.yaml
+  description: >
+    Turn entities on when presence is detected, and off after a configurable
+    period of inactivity.
+
+    Supports illuminance thresholds, time windows, and blocking entities for
+    both turn-on and turn-off actions.
+
+    Required:
+      - One or more trigger sensors (binary_sensor with motion, occupancy, or
+        door device class)
+
+    Optional:
+      - Turn-on entities and conditions (illuminance, time window, blocker)
+      - Turn-off entities, inactivity scene, and conditions (wait time, time
+        window, blocker)
+
+  input:
+    trigger_entities:
+      name: Trigger entities
+      description: >
+        Sensors that indicate presence or activity. When any entity turns on,
+        activity is detected. When all entities are off for the wait period,
+        inactivity is detected.
+      selector:
+        entity:
+          filter:
+          - domain: binary_sensor
+            device_class:
+            - motion
+            - occupancy
+            - door
+          multiple: true
+
+    turn_on_target:
+      name: (OPTIONAL) Entities to turn on
+      description: >
+        Entities to turn on when activity is detected. Supports lights, fans,
+        switches, and scenes.
+      default: []
+      selector:
+        entity:
+          filter:
+          - domain:
+            - light
+            - fan
+            - switch
+            - scene
+          multiple: true
+
+    illuminance_entity:
+      name: (OPTIONAL) Illuminance sensor
+      description: Sensor that measures current illumination level.
+      default:
+      selector:
+        entity:
+          domain: sensor
+          device_class: illuminance
+          multiple: false
+
+    turn_on_illuminance_cutoff:
+      name: (OPTIONAL) Illuminance cutoff
+      description: Only turn on when illuminance is below this threshold.
+      default:
+      selector:
+        entity:
+          domain: input_number
+          multiple: false
+
+    turn_on_blocker_entity:
+      name: (OPTIONAL) Turn-on blocking entity
+      description: >
+        If this entity is on, activity will not trigger turn-on actions.
+      default:
+      selector:
+        entity: {}
+
+    turn_on_after:
+      name: (OPTIONAL) Only turn on after time
+      description: Only turn on when current time is after this value.
+      default:
+      selector:
+        entity:
+          domain: input_datetime
+          multiple: false
+
+    turn_on_before:
+      name: (OPTIONAL) Only turn on before time
+      description: Only turn on when current time is before this value.
+      default:
+      selector:
+        entity:
+          domain: input_datetime
+          multiple: false
+
+    turn_off_target:
+      name: (OPTIONAL) Entities to turn off
+      description: >
+        Entities to turn off when inactivity is detected.
+      default: []
+      selector:
+        entity:
+          filter:
+          - domain:
+            - light
+            - fan
+            - switch
+          multiple: true
+
+    turn_off_scene:
+      name: (OPTIONAL) Scene to activate on inactivity
+      description: >
+        Scene to activate when inactivity is detected. Use this for inactivity
+        scenes instead of adding scenes to the turn-off target.
+      default:
+      selector:
+        entity:
+          domain: scene
+          multiple: false
+
+    turn_off_wait:
+      name: (OPTIONAL) Turn off wait time (minutes)
+      description: >
+        Minutes to wait after all trigger entities turn off before executing
+        turn-off actions. If not set, turn-off happens immediately.
+      default:
+      selector:
+        entity:
+          domain: input_number
+          multiple: false
+
+    turn_off_blocker_entity:
+      name: (OPTIONAL) Turn-off blocking entity
+      description: >
+        If this entity is on, turn-off actions are delayed until it turns off
+        or the blocker wait time expires.
+      default:
+      selector:
+        entity: {}
+
+    turn_off_blocker_wait:
+      name: (OPTIONAL) Turn-off blocking wait (minutes)
+      description: Maximum minutes to wait for the blocking entity to turn off.
+      default:
+      selector:
+        entity:
+          domain: input_number
+          multiple: false
+
+    turn_off_after:
+      name: (OPTIONAL) Only turn off after time
+      description: Only turn off when current time is after this value.
+      default:
+      selector:
+        entity:
+          domain: input_datetime
+          multiple: false
+
+    turn_off_before:
+      name: (OPTIONAL) Only turn off before time
+      description: Only turn off when current time is before this value.
+      default:
+      selector:
+        entity:
+          domain: input_datetime
+          multiple: false
+
+variables:
+  trigger_entities: !input trigger_entities
+  turn_on_target: !input turn_on_target
+  illuminance_entity: !input illuminance_entity
+  turn_on_illuminance_cutoff: !input turn_on_illuminance_cutoff
+  turn_on_blocker_entity: !input turn_on_blocker_entity
+  turn_on_before: !input turn_on_before
+  turn_on_before_time: >-
+    {%- if turn_on_before != none -%}
+      {{ states(turn_on_before) }}
+    {%- else -%}
+      {{ '23:59:59' }}
+    {%- endif -%}
+  turn_on_after: !input turn_on_after
+  turn_on_after_time: >-
+    {%- if turn_on_after != none -%}
+      {{ states(turn_on_after) }}
+    {%- else -%}
+      {{ '00:00:00' }}
+    {%- endif -%}
+  turn_off_target: !input turn_off_target
+  turn_off_scene: !input turn_off_scene
+  turn_off_wait: !input turn_off_wait
+  turn_off_blocker_entity: !input turn_off_blocker_entity
+  turn_off_blocker_wait: !input turn_off_blocker_wait
+  turn_off_before: !input turn_off_before
+  turn_off_before_time: >-
+    {%- if turn_off_before != none -%}
+      {{ states(turn_off_before) }}
+    {%- else -%}
+      {{ '23:59:59' }}
+    {%- endif -%}
+  turn_off_after: !input turn_off_after
+  turn_off_after_time: >-
+    {%- if turn_off_after != none -%}
+      {{ states(turn_off_after) }}
+    {%- else -%}
+      {{ '00:00:00' }}
+    {%- endif -%}
+
+trigger_variables:
+  turn_off_blocker_entity: !input turn_off_blocker_entity
+
+trigger:
+- alias: Activity detected
+  id: activity
+  platform: state
+  entity_id: !input trigger_entities
+  to: 'on'
+  not_from:
+  - unavailable
+  - unknown
+
+- alias: Inactivity detected
+  id: inactivity
+  platform: state
+  entity_id: !input trigger_entities
+  to: 'off'
+  not_from:
+  - unavailable
+  - unknown
+
+- alias: Turn-off blocker cleared
+  id: blocker_cleared
+  platform: template
+  value_template: >-
+    {{ turn_off_blocker_entity is not none and
+       is_state(turn_off_blocker_entity, 'off') }}
+
+condition: []
+
+action:
+- choose:
+  - alias: Activity detected
+    conditions:
+    - condition: trigger
+      id: activity
+    sequence:
+    - alias: Assert turn_on_blocker_entity is not active
+      condition: template
+      value_template: >-
+        {{ turn_on_blocker_entity == none or
+           is_state(turn_on_blocker_entity, 'off') }}
+    - alias: Assert turn_on_target is defined
+      condition: template
+      value_template: >-
+        {{ turn_on_target | length > 0 }}
+    - alias: Assert illuminance not defined or below threshold
+      condition: template
+      value_template: >-
+        {% set illuminance_defined = illuminance_entity != none
+           and turn_on_illuminance_cutoff != none %}
+        {% set illuminance_low = illuminance_defined
+           and (states(illuminance_entity) | int(0)
+                < states(turn_on_illuminance_cutoff) | int(0)) %}
+        {{ not illuminance_defined or illuminance_low }}
+    - alias: Assert within turn-on time window
+      condition: template
+      value_template: >-
+        {% set current_time = now().strftime('%H:%M:%S') %}
+        {% set spans_midnight = turn_on_after_time > turn_on_before_time %}
+        {% if spans_midnight %}
+          {{ current_time > turn_on_after_time
+             or current_time < turn_on_before_time }}
+        {% else %}
+          {{ current_time > turn_on_after_time
+             and current_time < turn_on_before_time }}
+        {% endif %}
+    - alias: Turn on target entities
+      service: homeassistant.turn_on
+      target:
+        entity_id: '{{ turn_on_target }}'
+
+  - alias: Inactivity detected
+    conditions:
+    - condition: trigger
+      id:
+      - inactivity
+      - blocker_cleared
+    sequence:
+    - alias: Assert all trigger entities are off
+      condition: template
+      value_template: >-
+        {{ expand(trigger_entities)
+           | selectattr('state', 'eq', 'on')
+           | list | count == 0 }}
+    - alias: Wait for inactivity period
+      delay:
+        minutes: '{{ states(turn_off_wait) | int(0) if turn_off_wait != none else 0 }}'
+    - alias: Re-verify all trigger entities still off
+      condition: template
+      value_template: >-
+        {{ expand(trigger_entities)
+           | selectattr('state', 'eq', 'on')
+           | list | count == 0 }}
+    - alias: Assert within turn-off time window
+      condition: template
+      value_template: >-
+        {% set current_time = now().strftime('%H:%M:%S') %}
+        {% set spans_midnight = turn_off_after_time > turn_off_before_time %}
+        {% if spans_midnight %}
+          {{ current_time > turn_off_after_time
+             or current_time < turn_off_before_time }}
+        {% else %}
+          {{ current_time > turn_off_after_time
+             and current_time < turn_off_before_time }}
+        {% endif %}
+    - alias: Wait for turn_off_blocker_entity
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ turn_off_blocker_entity != none }}'
+        - condition: template
+          value_template: '{{ turn_off_blocker_wait != none }}'
+        sequence:
+        - wait_template: '{{ is_state(turn_off_blocker_entity, ''off'') }}'
+          timeout:
+            minutes: '{{ states(turn_off_blocker_wait) | int(0) }}'
+    - alias: Assert turn_off_blocker_entity is not active
+      condition: template
+      value_template: >-
+        {{ turn_off_blocker_entity == none or
+           is_state(turn_off_blocker_entity, 'off') }}
+    - alias: Turn off target entities
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ turn_off_target | length > 0 }}'
+        sequence:
+        - service: homeassistant.turn_off
+          target:
+            entity_id: '{{ turn_off_target }}'
+    - alias: Activate inactivity scene
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ turn_off_scene != none }}'
+        sequence:
+        - service: scene.turn_on
+          target:
+            entity_id: '{{ turn_off_scene }}'

@@ -42,16 +42,15 @@ blueprint:
       description: >
         Entities to turn on when activity is detected. Supports lights, fans,
         switches, and scenes.
-      default: []
+      default:
       selector:
-        entity:
-          filter:
+        target:
+          entity:
           - domain:
             - light
             - fan
             - switch
             - scene
-          multiple: true
 
     illuminance_entity:
       name: (OPTIONAL) Illuminance sensor
@@ -102,15 +101,14 @@ blueprint:
       name: (OPTIONAL) Entities to turn off
       description: >
         Entities to turn off when inactivity is detected.
-      default: []
+      default:
       selector:
-        entity:
-          filter:
+        target:
+          entity:
           - domain:
             - light
             - fan
             - switch
-          multiple: true
 
     turn_off_scene:
       name: (OPTIONAL) Scene to activate on inactivity
@@ -256,7 +254,7 @@ action:
     - alias: Assert turn_on_target is defined
       condition: template
       value_template: >-
-        {{ turn_on_target | length > 0 }}
+        {{ turn_on_target != none }}
     - alias: Assert illuminance not defined or below threshold
       condition: template
       value_template: >-
@@ -280,8 +278,7 @@ action:
         {% endif %}
     - alias: Turn on target entities
       service: homeassistant.turn_on
-      target:
-        entity_id: '{{ turn_on_target }}'
+      target: '{{ turn_on_target }}'
 
   - alias: Inactivity detected
     conditions:
@@ -337,11 +334,10 @@ action:
       choose:
       - conditions:
         - condition: template
-          value_template: '{{ turn_off_target | length > 0 }}'
+          value_template: '{{ turn_off_target != none }}'
         sequence:
         - service: homeassistant.turn_off
-          target:
-            entity_id: '{{ turn_off_target }}'
+          target: '{{ turn_off_target }}'
     - alias: Activate inactivity scene
       choose:
       - conditions:

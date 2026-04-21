@@ -5,11 +5,13 @@ blueprint:
   name: Generic Area Activity and Inactivity Automation Blueprint
   source_url: https://raw.githubusercontent.com/jlaska/hass-blueprints/main/activity_and_inactivity_trigger.yaml
   description: >
-    Automate turning off entities in a room when occupancy/motion
-    stops after a period of time.
+    Automate turning off entities in a room when occupancy/motion stops after
+    a period of time.
 
-    This blueprint uses helper entities you have to create yourself for some input values, to be able to dynamically set limits.
-    For instructions on creating the helper entities take a look in the Home Assistant Community forum topic:
+    This blueprint uses helper entities you have to create yourself for some
+    input values, to be able to dynamically set limits. For instructions on
+    creating the helper entities take a look in the Home Assistant Community
+    forum topic:
     https://community.home-assistant.io/t/turn-on-light-switch-scene-or-script-based-on-motion-and-illuminance-more-conditions/257085
 
     Required entities:
@@ -29,6 +31,7 @@ blueprint:
       - Turn off blocking entity wait time (input_number defining amount in minutes)
       - Turn off time limit before (input_datetime, automation)
       - Turn off time limit after (input_datetime, automation)
+
   input:
     trigger_entities:
       name: Trigger entities
@@ -36,406 +39,322 @@ blueprint:
       selector:
         target:
           entity:
-            - domain: binary_sensor
-              device_class:
-                - motion
-                - occupancy
-                - door
-            - domain: light
-            - domain: fan
+          - domain:
+            - binary_sensor
+            device_class:
+            - motion
+            - occupancy
+            - door
+          - domain:
+            - light
+          - domain:
+            - fan
     turn_on_target:
       name: (OPTIONAL) Target entities to turn on
-      description: The entity to turn on when the automation is triggered.
-        Entity can be any entity, such as a light, fan, switch, scene or
-        script.
+      description: The entity to turn on when the automation is triggered. Entity
+        can be any entity, such as a light, fan, switch, scene or script.
       default:
       selector:
         target:
           entity:
-            - domain:
-                - light
-                - fan
-                - switch
-                - scene
-                - script
+          - domain:
+            - light
+            - fan
+            - switch
+            - scene
+            - script
     illuminance_entity:
       name: (OPTIONAL) Illuminance sensor
       description: Sensor that determines current illumination.
       default:
       selector:
         entity:
-          domain: sensor
-          device_class: illuminance
+          domain:
+          - sensor
+          device_class:
+          - illuminance
+          multiple: false
     turn_on_illuminance_cutoff:
       name: (OPTIONAL) Illuminance cutoff
-      description: This input_number will be used to compare to the current
-        illumination to determine if it is low.
+      description: This input_number will be used to compare to the current illumination
+        to determine if it is low.
       default:
       selector:
         entity:
-          domain: input_number
+          domain:
+          - input_number
+          multiple: false
     turn_on_blocker_entity:
       name: (OPTIONAL) Turn-on blocking entity
-      description: If this entity's state is on, it will prevent the automation
-        from running. E.g. sleepmode or away mode.
+      description: If this entity's state is on, it will prevent the automation from
+        running. E.g. sleepmode or away mode.
       default:
       selector:
-        entity:
+        entity: {}
     turn_on_after:
       name: (OPTIONAL) Only turn on after time.
-      description: Automation will only turn entities on when time is later
-        than the provided input_datetime value.  When an automation is
-        provided, the last_triggered attribute will be used.
+      description: Automation will only turn entities on when time is later than the
+        provided input_datetime value.  When an automation is provided, the last_triggered
+        attribute will be used.
       default:
       selector:
         entity:
           domain:
-            - input_datetime
-            - automation
+          - input_datetime
+          - automation
+          multiple: false
     turn_on_before:
       name: (OPTIONAL) Only turn on before time.
-      description: Automation will only turn entities on when time is earlier
-        than the provided input_datetime value.  When an automation is
-        provided, the last_triggered attribute will be used.
+      description: Automation will only turn entities on when time is earlier than
+        the provided input_datetime value.  When an automation is provided, the last_triggered
+        attribute will be used.
       default:
       selector:
         entity:
           domain:
-            - input_datetime
-            - automation
-
+          - input_datetime
+          - automation
+          multiple: false
     turn_off_target:
       name: (OPTIONAL) Target entities to turn off
-      description: If defined, the entity will be turned off when inactivity
-        is detected.
+      description: If defined, the entity will be turned off when inactivity is detected.
       default:
       selector:
         target:
           entity:
-            - domain:
-                - light
-                - fan
-                - switch
-                - scene
-                - script
+          - domain:
+            - light
+            - fan
+            - switch
+            - scene
+            - script
     turn_off_wait:
       name: (OPTIONAL) Turn off wait time (minutes)
-      description: Time in minutes to leave the trigger entity on after last
-        motion is detected. If not used entity will turn off immediately.
+      description: Time in minutes to leave the trigger entity on after last motion
+        is detected. If not used entity will turn off immediately.
       default:
       selector:
         entity:
-          domain: input_number
+          domain:
+          - input_number
+          multiple: false
     turn_off_blocker_entity:
       name: (OPTIONAL) Turn-off Blocking entity
-      description: If any of the provided entities state is on, it will prevent
-        the target entity from turning off after the set delay.
+      description: If any of the provided entities state is on, it will prevent the
+        target entity from turning off after the set delay.
       default:
       selector:
-        entity:
+        entity: {}
     turn_off_blocker_wait:
       name: (OPTIONAL) Turn-off Blocking wait (minutes)
-      description: Time in minutes to wait for blocking entity to enter the
-        desired state.
+      description: Time in minutes to wait for blocking entity to enter the desired
+        state.
       default:
       selector:
         entity:
-          domain: input_number
+          domain:
+          - input_number
+          multiple: false
     turn_off_after:
       name: (OPTIONAL) Only turn off entities after time.
-      description: Automation will only turn entities off when time is later
-        than the provided input_datetime value.  When an automation is
-        provided, the last_triggered attribute will be used.
+      description: Automation will only turn entities off when time is later than
+        the provided input_datetime value.  When an automation is provided, the last_triggered
+        attribute will be used.
       default:
       selector:
         entity:
           domain:
-            - input_datetime
-            - automation
+          - input_datetime
+          - automation
+          multiple: false
     turn_off_before:
       name: (OPTIONAL) Only turn off before time.
-      description: Automation will only turn entities off when time is earlier
-        than the provided input_datetime value.  When an automation is
-        provided, the last_triggered attribute will be used.
+      description: Automation will only turn entities off when time is earlier than
+        the provided input_datetime value.  When an automation is provided, the last_triggered
+        attribute will be used.
       default:
       selector:
         entity:
           domain:
-            - input_datetime
-            - automation
-
+          - input_datetime
+          - automation
+          multiple: false
 variables:
   trigger_entities: !input trigger_entities
   turn_on_target: !input turn_on_target
-  # turn_on_domain: "{{ turn_on_entity != none and states[turn_on_entity].domain or none }}"
-  turn_on_domain: "light"
+  turn_on_domain: light
   illuminance_entity: !input illuminance_entity
   turn_on_illuminance_cutoff: !input turn_on_illuminance_cutoff
   turn_on_blocker_entity: !input turn_on_blocker_entity
   turn_on_before: !input turn_on_before
-  turn_on_before_time: |-
-    {%- if turn_on_before != none and turn_on_before.startswith('automation.') -%}
-      {{ state_attr(turn_on_before, 'last_triggered')|as_local }}
-    {%- elif turn_on_before != none and turn_on_before.startswith('input_datetime.') -%}
-      {{ states(turn_on_before) }}
-    {%- else -%}
-      {{ '23:59:59' }}
-    {%- endif -%}
+  turn_on_before_time: "{%- if turn_on_before != none and turn_on_before.startswith('automation.')
+    -%}\n  {{ state_attr(turn_on_before, 'last_triggered')|as_local }}\n{%- elif turn_on_before
+    != none and turn_on_before.startswith('input_datetime.') -%}\n  {{ states(turn_on_before)
+    }}\n{%- else -%}\n  {{ '23:59:59' }}\n{%- endif -%}"
   turn_on_after: !input turn_on_after
-  turn_on_after_time: |-
-    {%- if turn_on_after != none and turn_on_after.startswith('automation.') -%}
-      {{ state_attr(turn_on_after, 'last_triggered')|as_local }}
-    {%- elif turn_on_after != none and turn_on_after.startswith('input_datetime.') -%}
-      {{ states(turn_on_after) }}
-    {%- else -%}
-      {{ '00:00:00' }}
-    {%- endif -%}
-
+  turn_on_after_time: "{%- if turn_on_after != none and turn_on_after.startswith('automation.')
+    -%}\n  {{ state_attr(turn_on_after, 'last_triggered')|as_local }}\n{%- elif turn_on_after
+    != none and turn_on_after.startswith('input_datetime.') -%}\n  {{ states(turn_on_after)
+    }}\n{%- else -%}\n  {{ '00:00:00' }}\n{%- endif -%}"
   turn_off_target: !input turn_off_target
-  turn_off_target_entities: |-
-    {{ expand(turn_off_target.get('entity_id', []))|map(attribute='entity_id')|list }}
+  turn_off_target_entities: '{{ expand(turn_off_target.get(''entity_id'', []))|map(attribute=''entity_id'')|list
+    }}'
   turn_off_wait: !input turn_off_wait
   turn_off_blocker_entity: !input turn_off_blocker_entity
   turn_off_blocker_wait: !input turn_off_blocker_wait
   turn_off_before: !input turn_off_before
-  turn_off_before_time: |-
-    {%- if turn_off_before != none and turn_off_before.startswith('automation.') -%}
-      {{ state_attr(turn_off_before, 'last_triggered')|as_local }}
-    {%- elif turn_off_before != none and turn_off_before.startswith('input_datetime.') -%}
-      {{ states(turn_off_before) }}
-    {%- else -%}
-      {{ '23:59:59' }}
-    {%- endif -%}
+  turn_off_before_time: "{%- if turn_off_before != none and turn_off_before.startswith('automation.')
+    -%}\n  {{ state_attr(turn_off_before, 'last_triggered')|as_local }}\n{%- elif
+    turn_off_before != none and turn_off_before.startswith('input_datetime.') -%}\n
+    \ {{ states(turn_off_before) }}\n{%- else -%}\n  {{ '23:59:59' }}\n{%- endif -%}"
   turn_off_after: !input turn_off_after
-  turn_off_after_time: |-
-    {%- if turn_off_after != none and turn_off_after.startswith('automation.') -%}
-      {{ state_attr(turn_off_after, 'last_triggered')|as_local }}
-    {%- elif turn_off_after != none and turn_off_after.startswith('input_datetime.') -%}
-      {{ states(turn_off_after) }}
-    {%- else -%}
-      {{ '00:00:00' }}
-    {%- endif -%}
-
+  turn_off_after_time: "{%- if turn_off_after != none and turn_off_after.startswith('automation.')
+    -%}\n  {{ state_attr(turn_off_after, 'last_triggered')|as_local }}\n{%- elif turn_off_after
+    != none and turn_off_after.startswith('input_datetime.') -%}\n  {{ states(turn_off_after)
+    }}\n{%- else -%}\n  {{ '00:00:00' }}\n{%- endif -%}"
 trigger_variables:
   trigger_entities: !input trigger_entities
   turn_off_wait: !input turn_off_wait
   turn_off_blocker_entity: !input turn_off_blocker_entity
-
 trigger:
-  - alias: 'Trigger on entity activity'
-    id: entity_activity
-    platform: template
-    value_template: |-
-      {{
-        'entity_id' in trigger_entities and
-        expand(trigger_entities.entity_id) | selectattr('state', 'eq', 'on') | list | count > 0
-      }}
-
-  - alias: 'Trigger on entity inactivity'
-    id: entity_inactivity
-    platform: template
-    value_template: |-
-      {{
-        'entity_id' in trigger_entities and
-        expand(trigger_entities.entity_id)
-          |selectattr('state', 'ne', 'on')
-          |selectattr('last_changed', 'lt', utcnow() - timedelta(minutes=states(turn_off_wait or '')|int(0)))
-          |list|count == expand(trigger_entities.entity_id) | list | count
-      }}
-    # TODO - The following won't survive reboots, use a input_timer
-    # for:
-    #   minutes: '{{ states(turn_off_wait)|int(0) }}'
-
-  - alias: 'Trigger on blocker entity inactivity'
-    id: blocker_entity_inactivity
-    platform: template
-    value_template: |-
-      {{
-        turn_off_blocker_entity is not none and
-        expand(turn_off_blocker_entity)
-          |selectattr('state', 'eq', 'on')
-          |list
-          |count == 0
-      }}
-
-  - alias: 'Trigger on area activity'
-    id: area_activity
-    platform: template
-    value_template: |-
-      {{
-        'area_id' in trigger_entities and
-        expand(area_entities(trigger_entities.area_id))
-          |selectattr('domain', 'eq', 'binary_sensor')
-          |selectattr('attributes.device_class', 'defined')
-          |selectattr('attributes.device_class', 'in', ['motion','occupancy'])
-          |selectattr('state', 'eq', 'on')
-          |map(attribute='entity_id')
-          |list|count
-      }}
-
-  - alias: 'Trigger on area inactivity'
-    id: area_inactivity
-    platform: template
-    value_template: |-
-      {%- set area_entities = expand(area_entities(trigger_entities.get('area_id', '')))
-          |selectattr('domain', 'eq', 'binary_sensor')
-          |selectattr('attributes.device_class', 'defined')
-          |selectattr('attributes.device_class', 'in', ['motion','occupancy'])
-          |list -%}
-      {{ area_entities
-          |selectattr('state', 'ne', 'on')
-          |selectattr('last_changed', 'lt', utcnow() - timedelta(minutes=states(turn_off_wait or '')|int(0)))
-          |list|count == area_entities | list | count
-      }}
-
-#      {{
-#        'area_id' in trigger_entities and
-#        expand(area_entities(trigger_entities.area_id))
-#          |selectattr('domain', 'eq', 'binary_sensor')
-#          |selectattr('attributes.device_class', 'defined')
-#          |selectattr('attributes.device_class', 'in', ['motion','occupancy'])
-#          |selectattr('state', 'ne', 'on')
-#          |sort(attribute='last_changed', reverse=True)
-#          |list|first.last_changed < utcnow() - timedelta(minutes=states(turn_off_wait)|int(0))
-#      }}
-
+- alias: Trigger on entity activity
+  id: entity_activity
+  platform: template
+  value_template: "{{\n  'entity_id' in trigger_entities and\n  expand(trigger_entities.entity_id)
+    | selectattr('state', 'eq', 'on') | list | count > 0\n}}"
+- alias: Trigger on entity inactivity
+  id: entity_inactivity
+  platform: template
+  value_template: "{{\n  'entity_id' in trigger_entities and\n  expand(trigger_entities.entity_id)\n
+    \   |selectattr('state', 'ne', 'on')\n    |selectattr('last_changed', 'lt', utcnow()
+    - timedelta(minutes=states(turn_off_wait or '')|int(0)))\n    |list|count == expand(trigger_entities.entity_id)
+    | list | count\n}}"
+- alias: Trigger on blocker entity inactivity
+  id: blocker_entity_inactivity
+  platform: template
+  value_template: "{{\n  turn_off_blocker_entity is not none and\n  expand(turn_off_blocker_entity)\n
+    \   |selectattr('state', 'eq', 'on')\n    |list\n    |count == 0\n}}"
+- alias: Trigger on area activity
+  id: area_activity
+  platform: template
+  value_template: "{{\n  'area_id' in trigger_entities and\n  expand(area_entities(trigger_entities.area_id))\n
+    \   |selectattr('domain', 'eq', 'binary_sensor')\n    |selectattr('attributes.device_class',
+    'defined')\n    |selectattr('attributes.device_class', 'in', ['motion','occupancy'])\n
+    \   |selectattr('state', 'eq', 'on')\n    |map(attribute='entity_id')\n    |list|count\n}}"
+- alias: Trigger on area inactivity
+  id: area_inactivity
+  platform: template
+  value_template: "{%- set area_entities = expand(area_entities(trigger_entities.get('area_id',
+    '')))\n    |selectattr('domain', 'eq', 'binary_sensor')\n    |selectattr('attributes.device_class',
+    'defined')\n    |selectattr('attributes.device_class', 'in', ['motion','occupancy'])\n
+    \   |list -%}\n{{ area_entities\n    |selectattr('state', 'ne', 'on')\n    |selectattr('last_changed',
+    'lt', utcnow() - timedelta(minutes=states(turn_off_wait or '')|int(0)))\n    |list|count
+    == area_entities | list | count\n}}"
 condition:
-  - alias: "Triggered by activity or inactivity"
-    or:
-      - "{{ trigger.id in ['entity_activity', 'area_activity'] }}"
-      - "{{ trigger.id in ['entity_inactivity', 'area_inactivity'] }}"
-      - "{{ trigger.id in ['blocker_entity_inactivity'] }}"
-  - alias: "Triggered for valid entity state changes"
-    and:
-      - "{{ trigger.from_state is defined }}"
-      - "{{ trigger.to_state is defined }}"
-
+- alias: Triggered by activity or inactivity
+  or:
+  - '{{ trigger.id in [''entity_activity'', ''area_activity''] }}'
+  - '{{ trigger.id in [''entity_inactivity'', ''area_inactivity''] }}'
+  - '{{ trigger.id in [''blocker_entity_inactivity''] }}'
+- alias: Triggered for valid entity state changes
+  and:
+  - '{{ trigger.from_state is defined }}'
+  - '{{ trigger.to_state is defined }}'
 action:
-  - choose:
-    - conditions:
-        - alias: "Triggered by activity"
-          condition: template
-          value_template: "{{ trigger.id in ['entity_activity', 'area_activity'] }}"
-      sequence:
-        - alias: 'Assert turn_on_blocker_entity is defined and off'
-          condition: template
-          value_template: |-
-            {{
-              (turn_on_blocker_entity == none) or is_state(turn_on_blocker_entity, 'off')
-            }}
-        - alias: 'Assert turn_on_target defined'
-          condition: template
-          value_template: |-
-            {{
-              turn_on_target != none
-            }}
-        - alias: 'Assert illuminance not defined or below threshold'
-          condition: template
-          value_template: >
-            {% set illuminance_defined = illuminance_entity != none and turn_on_illuminance_cutoff != none  %}
-            {% set illuminance_defined_and_low = (illuminance_defined and (states(illuminance_entity) | int(0) < states(turn_on_illuminance_cutoff) | int(0)))  %}
-            {% set supports_on_state_check = turn_on_domain != 'scene' and turn_on_domain != 'script' %}
-            {{
-              (not illuminance_defined or illuminance_defined_and_low)
-            }}
-        - alias: 'Assert time defined and within limits - start_time < current_time < stop_time'
-          condition: template
-          value_template: >
-            {% set current_time = now().strftime('%H:%M:%S')  %}
-            {% set current_time_is_before_limit = current_time < turn_on_before_time  %}
-            {% set current_time_is_after_limit = current_time > turn_on_after_time  %}
-            {% set before_limit_is_tomorrow = turn_on_before_time < turn_on_after_time  %}
-            {% set time_window_spans_midnight = turn_on_after_time > turn_on_before_time  %}
-
-            {% if time_window_spans_midnight and before_limit_is_tomorrow %}
-              {{ current_time_is_after_limit or current_time_is_before_limit }}
-            {% elif not time_window_spans_midnight %}
-              {{ current_time_is_before_limit and current_time_is_after_limit }}
-            {% endif %}
+- choose:
+  - conditions:
+    - alias: Triggered by activity
+      condition: template
+      value_template: '{{ trigger.id in [''entity_activity'', ''area_activity''] }}'
+    sequence:
+    - alias: Assert turn_on_blocker_entity is defined and off
+      condition: template
+      value_template: "{{\n  (turn_on_blocker_entity == none) or is_state(turn_on_blocker_entity,
+        'off')\n}}"
+    - alias: Assert turn_on_target defined
+      condition: template
+      value_template: "{{\n  turn_on_target != none\n}}"
+    - alias: Assert illuminance not defined or below threshold
+      condition: template
+      value_template: "{% set illuminance_defined = illuminance_entity != none and
+        turn_on_illuminance_cutoff != none  %} {% set illuminance_defined_and_low
+        = (illuminance_defined and (states(illuminance_entity) | int(0) < states(turn_on_illuminance_cutoff)
+        | int(0)))  %} {% set supports_on_state_check = turn_on_domain != 'scene'
+        and turn_on_domain != 'script' %} {{\n  (not illuminance_defined or illuminance_defined_and_low)\n}}\n"
+    - alias: Assert time defined and within limits - start_time < current_time < stop_time
+      condition: template
+      value_template: "{% set current_time = now().strftime('%H:%M:%S')  %} {% set
+        current_time_is_before_limit = current_time < turn_on_before_time  %} {% set
+        current_time_is_after_limit = current_time > turn_on_after_time  %} {% set
+        before_limit_is_tomorrow = turn_on_before_time < turn_on_after_time  %} {%
+        set time_window_spans_midnight = turn_on_after_time > turn_on_before_time
+        \ %}\n{% if time_window_spans_midnight and before_limit_is_tomorrow %}\n  {{
+        current_time_is_after_limit or current_time_is_before_limit }}\n{% elif not
+        time_window_spans_midnight %}\n  {{ current_time_is_before_limit and current_time_is_after_limit
+        }}\n{% endif %}\n"
+    - service: homeassistant.turn_on
+      target: '{{ turn_on_target }}'
+  - conditions:
+    - alias: Triggered by inactivity
+      condition: template
+      value_template: '{{ trigger.id in [''entity_inactivity'', ''area_inactivity'',
+        ''blocker_entity_inactivity''] }}'
+    sequence:
+    - alias: Assert trigger_entities is not defined or all trigger_entities are off
+        for turn_off_wait minutes
+      condition: template
+      value_template: "{{\n  (not 'entity_id' in trigger_entities)\n    or\n  (expand(trigger_entities.entity_id)\n
+        \   |selectattr('state', 'ne', 'on')\n    |selectattr('last_changed', 'lt',
+        utcnow() - timedelta(minutes=states(turn_off_wait or '')|int(0)))\n    |list|count
+        == expand(trigger_entities.entity_id) | list | count)\n    }}"
+    - alias: Assert turn-off times are defined and within limits - start_time < current_time
+        < stop_time
+      condition: template
+      value_template: "{% set current_time = now().strftime('%H:%M:%S')  %} {% set
+        current_time_is_before_limit = current_time < turn_off_before_time  %} {%
+        set current_time_is_after_limit = current_time > turn_off_after_time  %} {%
+        set before_limit_is_tomorrow = turn_off_before_time < turn_off_after_time
+        \ %} {% set time_window_spans_midnight = turn_off_after_time > turn_off_before_time
+        \ %}\n{% if time_window_spans_midnight and before_limit_is_tomorrow %}\n  {{
+        current_time_is_after_limit or current_time_is_before_limit }}\n{% elif not
+        time_window_spans_midnight %}\n  {{ current_time_is_before_limit and current_time_is_after_limit
+        }}\n{% endif %}\n"
+    - alias: Wait for turn_off_blocker_entity
+      choose:
+        conditions:
+        - condition: template
+          value_template: '{{ turn_off_blocker_entity != none }}'
+        - condition: template
+          value_template: '{{ turn_off_blocker_wait != none }}'
+        sequence:
+        - wait_template: '{{ expand(turn_off_blocker_entity)|selectattr(''state'',
+            ''eq'', ''on'')|list|count == 0 }}'
+          timeout:
+            minutes: '{{ states(turn_off_blocker_wait) | int(0) }}'
+    - alias: Assert turn_off_blocker_entity is not defined or off
+      condition: template
+      value_template: '{{ (turn_off_blocker_entity == none) or expand(turn_off_blocker_entity)|selectattr(''state'',
+        ''eq'', ''on'')|list|count == 0 }}'
+    - alias: Optionally turn off target
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ turn_off_target != none }}'
+        sequence:
+        - service: homeassistant.turn_off
+          target: "{{\n  dict(\n    area_id = turn_off_target.get('area_id', []),\n
+            \   device_id = turn_off_target.get('device_id', []),\n    entity_id =
+            turn_off_target_entities|reject('contains', 'scene.')|reject('contains',
+            'script.')|list\n  )\n}}"
+    - alias: Optionally turn off target scenes or scripts
+      choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ turn_off_target != none and expand(turn_off_target.get(''entity_id'',
+            []))|selectattr(''domain'', ''in'', [''script'', ''scene''])|list|count
+            > 0 }}'
+        sequence:
         - service: homeassistant.turn_on
-          target: "{{ turn_on_target }}"
-
-    - conditions:
-        - alias: "Triggered by inactivity"
-          condition: template
-          value_template: "{{ trigger.id in ['entity_inactivity', 'area_inactivity', 'blocker_entity_inactivity'] }}"
-      sequence:
-        - alias: "Assert trigger_entities is not defined or all trigger_entities are off for turn_off_wait minutes"
-          condition: template
-          value_template: |-
-            {{
-              (not 'entity_id' in trigger_entities)
-                or
-              (expand(trigger_entities.entity_id)
-                |selectattr('state', 'ne', 'on')
-                |selectattr('last_changed', 'lt', utcnow() - timedelta(minutes=states(turn_off_wait or '')|int(0)))
-                |list|count == expand(trigger_entities.entity_id) | list | count)
-                }}
-        - alias: 'Assert turn-off times are defined and within limits - start_time < current_time < stop_time'
-          condition: template
-          value_template: >
-            {% set current_time = now().strftime('%H:%M:%S')  %}
-            {% set current_time_is_before_limit = current_time < turn_off_before_time  %}
-            {% set current_time_is_after_limit = current_time > turn_off_after_time  %}
-            {% set before_limit_is_tomorrow = turn_off_before_time < turn_off_after_time  %}
-            {% set time_window_spans_midnight = turn_off_after_time > turn_off_before_time  %}
-
-            {% if time_window_spans_midnight and before_limit_is_tomorrow %}
-              {{ current_time_is_after_limit or current_time_is_before_limit }}
-            {% elif not time_window_spans_midnight %}
-              {{ current_time_is_before_limit and current_time_is_after_limit }}
-            {% endif %}
-        - alias: "Wait for turn_off_blocker_entity"
-          choose:
-            conditions:
-              - condition: template
-                value_template: '{{ turn_off_blocker_entity != none }}'
-              - condition: template
-                value_template: '{{ turn_off_blocker_wait != none }}'
-            sequence:
-              - wait_template: "{{ expand(turn_off_blocker_entity)|selectattr('state', 'eq', 'on')|list|count == 0 }}"
-                timeout:
-                  minutes: '{{ states(turn_off_blocker_wait) | int(0) }}'
-              # The following doesn't work ... not sure why
-              # - wait_for_trigger:
-              #     platform: state
-              #     entity_id: !input turn_off_blocker_entity
-              #     from: "on"
-              #     to: "off"
-              #   timeout:
-              #     minutes: '{{ states(turn_off_blocker_wait) | int(0) }}'
-
-        - alias: "Assert turn_off_blocker_entity is not defined or off"
-          condition: template
-          value_template: |-
-            {{ (turn_off_blocker_entity == none) or expand(turn_off_blocker_entity)|selectattr('state', 'eq', 'on')|list|count == 0 }}
-
-        - alias: "Optionally turn off target"
-          choose:
-            - conditions:
-                - condition: template
-                  value_template: "{{ turn_off_target != none }}"
-              sequence:
-                - service: homeassistant.turn_off
-                  target: |-
-                    {{
-                      dict(
-                        area_id = turn_off_target.get('area_id', []),
-                        device_id = turn_off_target.get('device_id', []),
-                        entity_id = turn_off_target_entities|reject('contains', 'scene.')|reject('contains', 'script.')|list
-                      )
-                    }}
-
-        - alias: "Optionally turn off target scenes or scripts"
-          choose:
-            - conditions:
-                - condition: template
-                  value_template: "{{ turn_off_target != none and expand(turn_off_target.get('entity_id', []))|selectattr('domain', 'in', ['script', 'scene'])|list|count > 0 }}"
-              sequence:
-                - service: homeassistant.turn_on
-                  target: |-
-                    {{
-                      dict(
-                        entity_id = turn_off_target_entities|select('contains', 'scene.')|list + turn_off_target_entities|select('contains', 'script.')|list
-                      )
-                    }}
+          target: "{{\n  dict(\n    entity_id = turn_off_target_entities|select('contains',
+            'scene.')|list + turn_off_target_entities|select('contains', 'script.')|list\n
+            \ )\n}}"

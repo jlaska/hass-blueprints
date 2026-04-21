@@ -100,7 +100,8 @@ blueprint:
     turn_off_target:
       name: (OPTIONAL) Entities to turn off
       description: >
-        Entities to turn off when inactivity is detected.
+        Entities to turn off when inactivity is detected. Scenes are supported —
+        they will be activated (not turned off) when inactivity is detected.
       default:
       selector:
         target:
@@ -109,17 +110,7 @@ blueprint:
             - light
             - fan
             - switch
-
-    turn_off_scene:
-      name: (OPTIONAL) Scene to activate on inactivity
-      description: >
-        Scene to activate when inactivity is detected. Use this for inactivity
-        scenes instead of adding scenes to the turn-off target.
-      default:
-      selector:
-        entity:
-          domain: scene
-          multiple: false
+            - scene
 
     turn_off_wait:
       name: (OPTIONAL) Turn off wait time (minutes)
@@ -189,7 +180,9 @@ variables:
       {{ '00:00:00' }}
     {%- endif -%}
   turn_off_target: !input turn_off_target
-  turn_off_scene: !input turn_off_scene
+  turn_off_target_entities: >-
+    {{ expand(turn_off_target.get('entity_id', []))
+       | map(attribute='entity_id') | list }}
   turn_off_wait: !input turn_off_wait
   turn_off_blocker_entity: !input turn_off_blocker_entity
   turn_off_blocker_wait: !input turn_off_blocker_wait
@@ -337,13 +330,26 @@ action:
           value_template: '{{ turn_off_target != none }}'
         sequence:
         - service: homeassistant.turn_off
-          target: '{{ turn_off_target }}'
-    - alias: Activate inactivity scene
+          target: >-
+            {{ dict(
+                 area_id = turn_off_target.get('area_id', []),
+                 device_id = turn_off_target.get('device_id', []),
+                 entity_id = turn_off_target_entities
+                             | reject('match', '^scene\\.')
+                             | list
+               ) }}
+    - alias: Activate inactivity scenes
       choose:
       - conditions:
         - condition: template
-          value_template: '{{ turn_off_scene != none }}'
+          value_template: >-
+            {{ turn_off_target != none and
+               turn_off_target_entities | select('match', '^scene\\.') | list | count > 0 }}
         sequence:
-        - service: scene.turn_on
-          target:
-            entity_id: '{{ turn_off_scene }}'
+        - service: homeassistant.turn_on
+          target: >-
+            {{ dict(
+                 entity_id = turn_off_target_entities
+                             | select('match', '^scene\\.')
+                             | list
+               ) }}

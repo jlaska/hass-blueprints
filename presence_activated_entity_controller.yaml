@@ -288,7 +288,16 @@ action:
            | list | count == 0 }}
     - alias: Wait for inactivity period
       delay:
-        minutes: '{{ states(turn_off_wait) | int(0) if turn_off_wait != none else 0 }}'
+        seconds: >-
+          {% set wait_minutes = states(turn_off_wait) | int(0) if turn_off_wait != none else 0 %}
+          {% set most_recent_off = expand(trigger_entities)
+               | selectattr('state', 'ne', 'on')
+               | sort(attribute='last_changed', reverse=true)
+               | map(attribute='last_changed')
+               | first | default(now()) %}
+          {% set elapsed = (now() - most_recent_off).total_seconds() %}
+          {% set remaining = (wait_minutes * 60 - elapsed) | int(0) %}
+          {{ [remaining, 0] | max }}
     - alias: Re-verify all trigger entities still off
       condition: template
       value_template: >-

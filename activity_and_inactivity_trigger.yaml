@@ -94,26 +94,22 @@ blueprint:
     turn_on_after:
       name: (OPTIONAL) Only turn on after time.
       description: Automation will only turn entities on when time is later than the
-        provided input_datetime value.  When an automation is provided, the last_triggered
-        attribute will be used.
+        provided input_datetime value.
       default:
       selector:
         entity:
           domain:
           - input_datetime
-          - automation
           multiple: false
     turn_on_before:
       name: (OPTIONAL) Only turn on before time.
       description: Automation will only turn entities on when time is earlier than
-        the provided input_datetime value.  When an automation is provided, the last_triggered
-        attribute will be used.
+        the provided input_datetime value.
       default:
       selector:
         entity:
           domain:
           - input_datetime
-          - automation
           multiple: false
     turn_off_target:
       name: (OPTIONAL) Target entities to turn off
@@ -158,44 +154,43 @@ blueprint:
     turn_off_after:
       name: (OPTIONAL) Only turn off entities after time.
       description: Automation will only turn entities off when time is later than
-        the provided input_datetime value.  When an automation is provided, the last_triggered
-        attribute will be used.
+        the provided input_datetime value.
       default:
       selector:
         entity:
           domain:
           - input_datetime
-          - automation
           multiple: false
     turn_off_before:
       name: (OPTIONAL) Only turn off before time.
       description: Automation will only turn entities off when time is earlier than
-        the provided input_datetime value.  When an automation is provided, the last_triggered
-        attribute will be used.
+        the provided input_datetime value.
       default:
       selector:
         entity:
           domain:
           - input_datetime
-          - automation
           multiple: false
 variables:
   trigger_entities: !input trigger_entities
   turn_on_target: !input turn_on_target
-  turn_on_domain: light
   illuminance_entity: !input illuminance_entity
   turn_on_illuminance_cutoff: !input turn_on_illuminance_cutoff
   turn_on_blocker_entity: !input turn_on_blocker_entity
   turn_on_before: !input turn_on_before
-  turn_on_before_time: "{%- if turn_on_before != none and turn_on_before.startswith('automation.')
-    -%}\n  {{ state_attr(turn_on_before, 'last_triggered')|as_local }}\n{%- elif turn_on_before
-    != none and turn_on_before.startswith('input_datetime.') -%}\n  {{ states(turn_on_before)
-    }}\n{%- else -%}\n  {{ '23:59:59' }}\n{%- endif -%}"
+  turn_on_before_time: >-
+    {%- if turn_on_before != none -%}
+      {{ states(turn_on_before) }}
+    {%- else -%}
+      {{ '23:59:59' }}
+    {%- endif -%}
   turn_on_after: !input turn_on_after
-  turn_on_after_time: "{%- if turn_on_after != none and turn_on_after.startswith('automation.')
-    -%}\n  {{ state_attr(turn_on_after, 'last_triggered')|as_local }}\n{%- elif turn_on_after
-    != none and turn_on_after.startswith('input_datetime.') -%}\n  {{ states(turn_on_after)
-    }}\n{%- else -%}\n  {{ '00:00:00' }}\n{%- endif -%}"
+  turn_on_after_time: >-
+    {%- if turn_on_after != none -%}
+      {{ states(turn_on_after) }}
+    {%- else -%}
+      {{ '00:00:00' }}
+    {%- endif -%}
   turn_off_target: !input turn_off_target
   turn_off_target_entities: '{{ expand(turn_off_target.get(''entity_id'', []))|map(attribute=''entity_id'')|list
     }}'
@@ -203,15 +198,19 @@ variables:
   turn_off_blocker_entity: !input turn_off_blocker_entity
   turn_off_blocker_wait: !input turn_off_blocker_wait
   turn_off_before: !input turn_off_before
-  turn_off_before_time: "{%- if turn_off_before != none and turn_off_before.startswith('automation.')
-    -%}\n  {{ state_attr(turn_off_before, 'last_triggered')|as_local }}\n{%- elif
-    turn_off_before != none and turn_off_before.startswith('input_datetime.') -%}\n
-    \ {{ states(turn_off_before) }}\n{%- else -%}\n  {{ '23:59:59' }}\n{%- endif -%}"
+  turn_off_before_time: >-
+    {%- if turn_off_before != none -%}
+      {{ states(turn_off_before) }}
+    {%- else -%}
+      {{ '23:59:59' }}
+    {%- endif -%}
   turn_off_after: !input turn_off_after
-  turn_off_after_time: "{%- if turn_off_after != none and turn_off_after.startswith('automation.')
-    -%}\n  {{ state_attr(turn_off_after, 'last_triggered')|as_local }}\n{%- elif turn_off_after
-    != none and turn_off_after.startswith('input_datetime.') -%}\n  {{ states(turn_off_after)
-    }}\n{%- else -%}\n  {{ '00:00:00' }}\n{%- endif -%}"
+  turn_off_after_time: >-
+    {%- if turn_off_after != none -%}
+      {{ states(turn_off_after) }}
+    {%- else -%}
+      {{ '00:00:00' }}
+    {%- endif -%}
 trigger_variables:
   trigger_entities: !input trigger_entities
   turn_off_wait: !input turn_off_wait
@@ -276,11 +275,13 @@ action:
       value_template: "{{\n  turn_on_target != none\n}}"
     - alias: Assert illuminance not defined or below threshold
       condition: template
-      value_template: "{% set illuminance_defined = illuminance_entity != none and
-        turn_on_illuminance_cutoff != none  %} {% set illuminance_defined_and_low
-        = (illuminance_defined and (states(illuminance_entity) | int(0) < states(turn_on_illuminance_cutoff)
-        | int(0)))  %} {% set supports_on_state_check = turn_on_domain != 'scene'
-        and turn_on_domain != 'script' %} {{\n  (not illuminance_defined or illuminance_defined_and_low)\n}}\n"
+      value_template: >-
+        {% set illuminance_defined = illuminance_entity != none
+           and turn_on_illuminance_cutoff != none %}
+        {% set illuminance_low = illuminance_defined
+           and (states(illuminance_entity) | int(0)
+                < states(turn_on_illuminance_cutoff) | int(0)) %}
+        {{ not illuminance_defined or illuminance_low }}
     - alias: Assert time defined and within limits - start_time < current_time < stop_time
       condition: template
       value_template: "{% set current_time = now().strftime('%H:%M:%S')  %} {% set

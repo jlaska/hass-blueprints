@@ -35,13 +35,16 @@ blueprint:
             - motion
             - occupancy
             - door
+          - domain: light
+          - domain: fan
+          - domain: switch
           multiple: true
 
     turn_on_target:
       name: (OPTIONAL) Entities to turn on
       description: >
         Entities to turn on when activity is detected. Supports lights, fans,
-        switches, and scenes.
+        switches, scenes, and scripts.
       default:
       selector:
         target:
@@ -51,6 +54,7 @@ blueprint:
             - fan
             - switch
             - scene
+            - script
 
     illuminance_entity:
       name: (OPTIONAL) Illuminance sensor
@@ -100,8 +104,9 @@ blueprint:
     turn_off_target:
       name: (OPTIONAL) Entities to turn off
       description: >
-        Entities to turn off when inactivity is detected. Scenes are supported —
-        they will be activated (not turned off) when inactivity is detected.
+        Entities to turn off when inactivity is detected. Scenes and scripts are
+        supported — they will be activated (not turned off) when inactivity is
+        detected.
       default:
       selector:
         target:
@@ -111,6 +116,7 @@ blueprint:
             - fan
             - switch
             - scene
+            - script
 
     turn_off_wait:
       name: (OPTIONAL) Turn off wait time (minutes)
@@ -126,11 +132,12 @@ blueprint:
     turn_off_blocker_entity:
       name: (OPTIONAL) Turn-off blocking entity
       description: >
-        If this entity is on, turn-off actions are delayed until it turns off
-        or the blocker wait time expires.
+        If any of these entities are on, turn-off actions are delayed until
+        they all turn off or the blocker wait time expires.
       default:
       selector:
-        entity: {}
+        entity:
+          multiple: true
 
     turn_off_blocker_wait:
       name: (OPTIONAL) Turn-off blocking wait (minutes)
@@ -228,7 +235,8 @@ trigger:
   platform: template
   value_template: >-
     {{ turn_off_blocker_entity is not none and
-       is_state(turn_off_blocker_entity, 'off') }}
+       expand(turn_off_blocker_entity)
+       | selectattr('state', 'eq', 'on') | list | count == 0 }}
 
 condition: []
 
@@ -324,14 +332,17 @@ action:
         - condition: template
           value_template: '{{ turn_off_blocker_wait != none }}'
         sequence:
-        - wait_template: '{{ is_state(turn_off_blocker_entity, ''off'') }}'
+        - wait_template: >-
+            {{ expand(turn_off_blocker_entity)
+               | selectattr('state', 'eq', 'on') | list | count == 0 }}
           timeout:
             minutes: '{{ states(turn_off_blocker_wait) | int(0) }}'
     - alias: Assert turn_off_blocker_entity is not active
       condition: template
       value_template: >-
         {{ turn_off_blocker_entity == none or
-           is_state(turn_off_blocker_entity, 'off') }}
+           expand(turn_off_blocker_entity)
+           | selectattr('state', 'eq', 'on') | list | count == 0 }}
     - alias: Turn off target entities
       choose:
       - conditions:
@@ -344,21 +355,21 @@ action:
                  area_id = turn_off_target.get('area_id', []),
                  device_id = turn_off_target.get('device_id', []),
                  entity_id = turn_off_target_entities
-                             | reject('match', '^scene\\.')
+                             | reject('match', '^(scene|script)\\.')
                              | list
                ) }}
-    - alias: Activate inactivity scenes
+    - alias: Activate inactivity scenes and scripts
       choose:
       - conditions:
         - condition: template
           value_template: >-
             {{ turn_off_target != none and
-               turn_off_target_entities | select('match', '^scene\\.') | list | count > 0 }}
+               turn_off_target_entities | select('match', '^(scene|script)\\.') | list | count > 0 }}
         sequence:
         - service: homeassistant.turn_on
           target: >-
             {{ dict(
                  entity_id = turn_off_target_entities
-                             | select('match', '^scene\\.')
+                             | select('match', '^(scene|script)\\.')
                              | list
                ) }}
